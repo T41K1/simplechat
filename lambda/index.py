@@ -21,11 +21,12 @@ bedrock_client = None
 
 
 # モデルID
-MODEL_ID = os.environ.get("MODEL_ID", "us.amazon.nova-lite-v1:0")
+#MODEL_ID = os.environ.get("MODEL_ID", "us.amazon.nova-lite-v1:0")
 
 
 
 INSERT_URL = 'https://d1c1-35-247-144-254.ngrok-free.app//generate'
+
 import urllib.request
 def lambda_handler(event, context):
     #リクエストボディの解析
