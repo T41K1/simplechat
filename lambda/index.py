@@ -4,7 +4,7 @@ import os
 import boto3
 import re  # 正規表現モジュールをインポート
 from botocore.exceptions import ClientError
-
+import urllib.request
 
 # Lambda コンテキストからリージョンを抽出する関数
 def extract_region_from_arn(arn):
@@ -17,10 +17,59 @@ def extract_region_from_arn(arn):
 # グローバル変数としてクライアントを初期化（初期値）
 bedrock_client = None
 
+
+
 # モデルID
 MODEL_ID = os.environ.get("MODEL_ID", "us.amazon.nova-lite-v1:0")
 
+
+
+INSERT_URL = 'https://7980-34-138-25-121.ngrok-free.app/docs'
+import urllib.request
 def lambda_handler(event, context):
+  #リクエストボディの解析
+  body = json.loads(event['body'])
+  message = body['message']
+  conversation_history = body.get('conversationHistory', [])
+
+  # Fast APIへのアクセス
+  payload = json.dumps({
+    'message':message,
+    'conversatoin_history':conversation_history
+  }).encode('utf-8')
+
+  req = urllib.request.Request(
+    INSERT_URL,
+    data = payload,
+    headers={'Content-Type':'application/json'},
+    method = 'POST'
+  )
+
+  with urllib.request.Request(req) as res:
+    result = json.loads(res.read().decode('utf-8'))
+
+  #Fast API側の'response'をそのまま返す
+  assistant_response = result['response']
+  updated_history = result.get('conversationHistory',[])
+
+  return {
+        "statusCode": 200,
+        "headers": {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+        },
+        "body": json.dumps({
+            "success": True,
+            "response": assistant_response,
+            "conversationHistory": updated_history
+        })
+  }
+
+
+
+
+
+def lambda_handler1(event, context):
     try:
         # コンテキストから実行リージョンを取得し、クライアントを初期化
         global bedrock_client
