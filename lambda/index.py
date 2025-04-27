@@ -24,62 +24,99 @@ bedrock_client = None
 #MODEL_ID = os.environ.get("MODEL_ID", "us.amazon.nova-lite-v1:0")
 
 
-
-INSERT_URL = 'https://d1c1-35-247-144-254.ngrok-free.app//generate'
-
+FAST_API_URL = os.environ.get("FAST_API_URL", "https://6790-35-247-166-69.ngrok-free.app")
 import urllib.request
 def lambda_handler(event, context):
-    #リクエストボディの解析
-    body = json.loads(event['body'])
-    message = body['message']
-    conversation_history = body.get('conversationHistory', [])
-
-    # Fast APIへのアクセス
-    payload = json.dumps({
-        'message':message,
-        'conversatoin_history':conversation_history
-        }).encode('utf-8')
-    #fast APIへのリクエスト
-    req = urllib.request.Request(
-        INSERT_URL,
-        data = payload,
-        headers={'Content-Type':'application/json'},
-        method = 'POST')
-    
-    with urllib.request.urlopen(req) as res:
-        # レスポンスを取得
-        result = json.loads(res.read().decode('utf-8'))
-        print(result)
-        
-        assistant_response = result['response']
-        updated_conversation_history = result.get('conversationHistory', [])
-        # アシスタントの応答を会話履歴に追加
-        # アシスタントの応答を会話履歴に追加
-
     try:
-        with urlopen(req, timeout=10) as res:
-            body = res.read().decode('utf-8')
-    except HTTPError as e:
-        print(f"HTTP error: {e.code} {e.reason}")
-    except URLError as e:
-        print(f"URL error: {e.reason}")
-
-    return {
-        "statusCode": 200,
-        'headers':{
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        },
-        'body': json.dumps({
-            "success": True,
-            "response": assistant_response,
-            "conversationHistory": updated_conversation_history
+        # リクエストボディの解析
+        body = json.loads(event['body'])
+        message = body['message']
+        conversation_history = body.get('conversationHistory', [])
+        
+        print("Processing message:", message)
+        
+        # 会話履歴を使用
+        messages = conversation_history.copy()
+        
+        # ユーザーメッセージを追加
+        messages.append({
+            "role": "user",
+            "content": message
         })
-    }
+        
+        # FastAPIエンドポイントにリクエストを送信
+        payload = {
+            "prompt": message,
+            "max_new_tokens": 100,
+            "do_sample": True,
+            "temperature": 0.7,
+            "top_p": 0.9
+        }
+        
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        }
+        
+        request = Request(FAST_API_URL, data=json.dumps(payload).encode('utf-8'), headers=headers)
+        
+        with urlopen(request) as response:
+            response_body = json.loads(response.read().decode('utf-8'))
+        
+        # 応答の検証
+        if not response_body.get('generated_text'):
+            raise Exception("No response content from the model")
+        
+        # アシスタントの応答を取得
+        assistant_response = response_body['generated_text']
+        
+        # アシスタントの応答を会話履歴に追加
+        messages.append({
+            "role": "assistant",
+            "content": assistant_response
+        })
+        
+        # 成功レスポンスの返却
+        return {
+            "statusCode": 200,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+                "Access-Control-Allow-Methods": "OPTIONS,POST"
+            },
+            "body": json.dumps({
+                "success": True,
+                "response": assistant_response,
+                "conversationHistory": messages
+            })
+        }
+    
+
+    except Exception as error:
+        print("Error proxying to FastAPI:", error)
+        return {
+            "statusCode": 500,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+                "Access-Control-Allow-Methods": "OPTIONS,POST"
+            },
+            "body": json.dumps({
+                "success": False,
+                "error": str(error)
+            })
+        }
 
 
 
 
+
+
+        
+        
+        
 def lambda_handler1(event, context):
     try:
         # コンテキストから実行リージョンを取得し、クライアントを初期化
