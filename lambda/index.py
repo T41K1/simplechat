@@ -52,7 +52,15 @@ def lambda_handler(event, context):
     updated_conversation_history = result.get('conversationHistory', [])
     # アシスタントの応答を会話履歴に追加
     # アシスタントの応答を会話履歴に追加
-    
+
+    try:
+        with urlopen(req, timeout=10) as res:
+            body = res.read().decode('utf-8')
+    except HTTPError as e:
+        print(f"HTTP error: {e.code} {e.reason}")
+    except URLError as e:
+        print(f"URL error: {e.reason}")
+
     return {
         "statusCode": 200,
         'headers':{
