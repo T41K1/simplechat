@@ -24,7 +24,7 @@ MODEL_ID = os.environ.get("MODEL_ID", "us.amazon.nova-lite-v1:0")
 
 
 
-INSERT_URL = 'https://7980-34-138-25-121.ngrok-free.app/docs'
+INSERT_URL = 'https://d1c1-35-247-144-254.ngrok-free.app/'
 import urllib.request
 def lambda_handler(event, context):
   #リクエストボディの解析
