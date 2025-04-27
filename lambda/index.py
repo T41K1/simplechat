@@ -38,20 +38,22 @@ def lambda_handler(event, context):
         'message':message,
         'conversatoin_history':conversation_history
         }).encode('utf-8')
-
+    #fast APIへのリクエスト
     req = urllib.request.Request(
         INSERT_URL,
         data = payload,
         headers={'Content-Type':'application/json'},
         method = 'POST')
     
-    with urllib.request.Request(req) as res:
+    with urllib.request.urlopen(req) as res:
+        # レスポンスを取得
         result = json.loads(res.read().decode('utf-8'))
+        print(result)
         
-    assistant_response = result['response']
-    updated_conversation_history = result.get('conversationHistory', [])
-    # アシスタントの応答を会話履歴に追加
-    # アシスタントの応答を会話履歴に追加
+        assistant_response = result['response']
+        updated_conversation_history = result.get('conversationHistory', [])
+        # アシスタントの応答を会話履歴に追加
+        # アシスタントの応答を会話履歴に追加
 
     try:
         with urlopen(req, timeout=10) as res:
