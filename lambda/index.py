@@ -58,7 +58,12 @@ def lambda_handler(event, context):
             "Accept": "application/json"
         }
         
-        request = Request(FAST_API_URL, data=json.dumps(payload).encode('utf-8'), headers=headers)
+        request = urllib.request.Request(
+            FAST_API_URL + "/generate",
+            data = payload,
+            headers = {"Content-Type": "application/json"},
+            method = "POST"            
+        )
         
         with urlopen(request) as response:
             response_body = json.loads(response.read().decode('utf-8'))
@@ -117,7 +122,7 @@ def lambda_handler(event, context):
         
         
         
-def lambda_handler1(event, context):
+#def lambda_handler1(event, context):
     try:
         # コンテキストから実行リージョンを取得し、クライアントを初期化
         global bedrock_client
