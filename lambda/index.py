@@ -63,8 +63,7 @@ def lambda_handler(event, context):
             "success": True,
             "response": assistant_response,
             "conversationHistory": updated_conversation_history
-        })
-    }
+        })}
 
 
 
