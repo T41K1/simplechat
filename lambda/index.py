@@ -26,12 +26,16 @@ bedrock_client = None
 
 FAST_API_URL = os.environ.get("FAST_API_URL", "https://6790-35-247-166-69.ngrok-free.app/generate")
 import urllib.request
-def lambda_handler(event, context):
+#AWS Lamdba上で動作し、API Gateway経由で受け取ったリクエストを内部のFastAPIへ転送し、その結果をAPI Gatewayに返す関数
+#Lambda関数内で受け取ったユーザーのメッセージをFast APIで立てた推論サーバーにPOSTし、その返却値を受け取ってクライアントに返す
+def lambda_handler(event, context): 
+    #event :API Gateway などから渡されるリクエスト情報が入った辞書（JSON 相当）
+    #context : Lambda の実行コンテキスト情報が入ったオブジェクト
     try:
         # リクエストボディの解析
-        body = json.loads(event['body'])
-        message = body['message']
-        conversation_history = body.get('conversationHistory', [])
+        body = json.loads(event['body']) #文字列化されたJSONをPythonの辞書に変換する
+        message = body['message'] #クライアントからのメッセージを取得
+        conversation_history = body.get('conversationHistory', []) #会話履歴を取得する、なければ空リストを取得する
         
         print("Processing message:", message)
         
@@ -64,8 +68,9 @@ def lambda_handler(event, context):
             headers = {"Content-Type": "application/json"},
             method = "POST"            
         )
-        
+        #fast APIへのリクエスト送信とレスポンス取得
         with urlopen(request) as response:
+            #レスポンス(モデルの返答;JSON)をPythonの辞書に変換する
             response_body = json.loads(response.read().decode('utf-8'))
         
         # 応答の検証
@@ -122,7 +127,7 @@ def lambda_handler(event, context):
         
         
         
-#def lambda_handler1(event, context):
+def lambda_handler1(event, context):
     try:
         # コンテキストから実行リージョンを取得し、クライアントを初期化
         global bedrock_client
