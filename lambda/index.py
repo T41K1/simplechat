@@ -32,7 +32,7 @@ def lambda_handler(event, context):
     #event :API Gateway などから渡されるリクエスト情報が入った辞書（JSON 相当）
     #context : Lambda の実行コンテキスト情報が入ったオブジェクト
     try:
-        # リクエストボディの解析
+        #API Gateway経由でlambda関数に送られてきたデータの解析
         body = json.loads(event['body']) #文字列化されたJSONをPythonの辞書に変換する
         message = body['message'] #クライアントからのメッセージを取得
         conversation_history = body.get('conversationHistory', []) #会話履歴を取得する、なければ空リストを取得する
@@ -57,21 +57,23 @@ def lambda_handler(event, context):
             "top_p": 0.9
         }
         payload = json.dumps(payload).encode('utf-8')
+        #HTTPリクエストに関するメタデータの指定
         headers = {
-            "Content-Type": "application/json",
+            "Content-Type": "application/json",#このリクエストのbodyがJSONであることを意味する
             "Accept": "application/json"
         }
-        
+        #AWS Lamdba関数がAPI Gatewayで受け取ったユーザーリクエストを外部のFastAPI推論サーバーに転送の準備
         request = urllib.request.Request(
             FAST_API_URL,
             data = payload,
             headers = {"Content-Type": "application/json"},
-            method = "POST"            
+            method = "POST" #POSTを使用して送信           
         )
-        #fast APIへのリクエスト送信とレスポンス取得
-        with urlopen(request) as response:
+        
+        #requestをFast APIへのリクエスト送信とレスポンス取得
+        with urlopen(request) as response: #urlopen ->送信, withで送信結果を受け取り
             #レスポンス(モデルの返答;JSON)をPythonの辞書に変換する
-            response_body = json.loads(response.read().decode('utf-8'))
+            response_body = json.loads(response.read().decode('utf-8'))#返答結果を処理
         
         # 応答の検証
         if not response_body.get('generated_text'):
@@ -86,7 +88,7 @@ def lambda_handler(event, context):
             "content": assistant_response
         })
         
-        # 成功レスポンスの返却
+        # 成功レスポンスの返却->これはAWS Lambdaのレスポンス形式に従う
         return {
             "statusCode": 200,
             "headers": {
@@ -101,6 +103,13 @@ def lambda_handler(event, context):
                 "conversationHistory": messages
             })
         }
+        
+        # FastAPIの例
+        #return {
+            # "success": True,
+            # "response": assistant_response,
+            # "conversationHistory": messages
+            # }
     
 
     except Exception as error:
@@ -126,7 +135,7 @@ def lambda_handler(event, context):
 
         
         
-        
+#元のAWSからの実行コード        
 def lambda_handler1(event, context):
     try:
         # コンテキストから実行リージョンを取得し、クライアントを初期化
